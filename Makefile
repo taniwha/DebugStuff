@@ -14,7 +14,7 @@ DS_FILES := \
 	Properties/AssemblyInfo.cs \
 	$e
 
-#include KodeUI/KodeUI.inc
+include KodeUI/KodeUI.inc
 
 RESGEN2		:= resgen2
 CSC			:= csc
@@ -59,9 +59,10 @@ UNITY := \
 	-r:UnityEngine.TextRenderingModule.dll \
 	-r:UnityEngine.PhysicsModule.dll \
 	-r:UnityEngine.InputLegacyModule.dll \
+	-r:UnityEngine.Physics2DModule.dll \
 	$e
 
-bin/DebugStuff.dll: ${DS_FILES}
+bin/DebugStuff.dll: ${DS_FILES} ${KodeUI}
 	@mkdir -p bin
 	${CSC} ${CSCFLAGS} ${SYSTEM} ${KSP} ${UNITY} -out:$@ $^
 
