@@ -201,37 +201,8 @@ namespace DebugStuff
             DumpGameObjectChilds(p, "", sb);
         }
 
-        // A bit messy. The code could be simplified by beeing smarter with when I add
-        // characters to pre but it works like that and it does not need to be efficient
-        private void DumpGameObjectChilds(GameObject go, string pre, StringBuilder sb)
+        private void DumpComponents(GameObject go, string preComp)
         {
-            bool first = pre == "";
-            List<GameObject> neededChilds = new List<GameObject>();
-            int count = go.transform.childCount;
-            for (int i = 0; i < count; i++)
-            {
-                GameObject child = go.transform.GetChild(i).gameObject;
-                if (!child.GetComponent<Part>() && child.name != "main camera pivot")
-                    neededChilds.Add(child);
-            }
-
-            count = neededChilds.Count;
-
-            sb.Append(pre);
-            if (!first)
-            {
-                sb.Append(count > 0 ? "--+" : "---");
-            }
-            else
-            {
-                sb.Append("+");
-            }
-
-            sb.AppendFormat("{0} T:{1} L:{2} ({3})\n", go.name, go.tag, go.layer, LayerMask.LayerToName(go.layer));
-
-            string front = first ? "" : "  ";
-            string preComp = pre + front + (count > 0 ? "| " : "  ");
-
             Component[] comp = go.GetComponents<Component>();
             
             for (int i = 0; i < comp.Length; i++)
@@ -245,13 +216,14 @@ namespace DebugStuff
                     sb.AppendFormat("{0}  {1} - {2}\n    {0} - Anchor Min {3:F0} - Max {4:F0} - Pivot {5} - Scale: {9:F2}\n{0}    Position {6:F0} - Rotation {8:F5} - Size {7:F0}\n"
                         , preComp, comp[i].GetType().Name, go.transform.name, rect.anchorMin, rect.anchorMax, rect.pivot, rect.anchoredPosition3D, rect.sizeDelta, rect.localRotation.eulerAngles, rect.localScale);
                 }
-                //else if (comp[i] is Canvas)
-                //{
-                //    Debug.Log("4-3");
-                //    Canvas c = (Canvas)comp[i];
-                //    sb.AppendFormat("{0}  {1} - {2}\n{0} Mode {3} - PP {4} - Camera {5} - Sort {6} - Layer {7} - LayerName {8}\n"
-                //        , preComp, comp[i].GetType().Name, go.transform.name, c.renderMode, c.pixelPerfect, c.worldCamera.name, c.sortingOrder, c.sortingLayerID, c.sortingLayerName);
-                //}
+                else if (comp[i] is Canvas)
+                {
+                    Debug.Log("4-3");
+                    Canvas c = (Canvas)comp[i];
+                    sb.AppendFormat("{0}  {1} - {2}\n{0} Mode {3} - PP {4} - Camera {5} - Sort {6} - Layer {7} - LayerName {8}\n"
+                        , preComp, comp[i].GetType().Name, go.transform.name, c.renderMode, c.pixelPerfect, c.worldCamera?.name, c.sortingOrder, c.sortingLayerID, c.sortingLayerName);
+                    Debug.Log("4-4");
+                }
                 else if (comp[i] is CanvasScaler)
                 {
                     CanvasScaler cs = (CanvasScaler)comp[i];
@@ -329,6 +301,38 @@ namespace DebugStuff
             }
 
             sb.AppendLine(preComp);
+        }
+
+        // A bit messy. The code could be simplified by beeing smarter with when I add
+        // characters to pre but it works like that and it does not need to be efficient
+        private void DumpGameObjectChilds(GameObject go, string pre, StringBuilder sb)
+        {
+            bool first = pre == "";
+            List<GameObject> neededChilds = new List<GameObject>();
+            int count = go.transform.childCount;
+            for (int i = 0; i < count; i++)
+            {
+                GameObject child = go.transform.GetChild(i).gameObject;
+                if (!child.GetComponent<Part>() && child.name != "main camera pivot")
+                    neededChilds.Add(child);
+            }
+
+            count = neededChilds.Count;
+
+            sb.Append(pre);
+            if (!first)
+            {
+                sb.Append(count > 0 ? "--+" : "---");
+            }
+            else
+            {
+                sb.Append("+");
+            }
+
+            sb.AppendFormat("{0} T:{1} L:{2} ({3})\n", go.name, go.tag, go.layer, LayerMask.LayerToName(go.layer));
+
+            string front = first ? "" : "  ";
+            DumpComponents(go, pre + front + (count > 0 ? "| " : "  "));
 
             for (int i = 0; i < count; i++)
             {
