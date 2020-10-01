@@ -11,6 +11,8 @@ using UnityEngine.Profiling;
 using UnityEngine.UI;
 using TMPro;
 
+using KodeUI;
+
 namespace DebugStuff
 {
     [KSPAddon(KSPAddon.Startup.EveryScene, true)]
@@ -18,8 +20,8 @@ namespace DebugStuff
     {
         private int flip;
         
-        private GameObject hoverObject;
-        private GameObject previousDisplayedObject;
+        private GameObject hoverObject = null;
+        //private GameObject previousDisplayedObject;
         private GameObject currentDisplayedObject;
         private StringBuilder sb = new StringBuilder();
         private bool showUI;
@@ -38,11 +40,10 @@ namespace DebugStuff
         //private Rect winPos = new Rect(300, 100, 400, 600);
 
         private static RectTransform window;
-        private static Vector2 originalLocalPointerPosition;
-        private static Vector3 originalPanelLocalPosition;
-        private static Text partTree;
-        private static Text info;
-        private static Text limitText;
+        private static TreeView objTree;
+		private static List<TreeView.TreeItem> objTreeItems = new List<TreeView.TreeItem> ();
+        private static UIText info;
+        private static UIText limitText;
         private static Font monoSpaceFont;
 
         private int limitDepth = 2;
@@ -74,7 +75,8 @@ namespace DebugStuff
             }
             flip = 0;
 
-            if (window == null)
+			//FIXME KodeUI loads styles to late for this to work in the loading scene
+            if (showUI && window == null)
             {
                 if (UIMasterController.Instance != null)
                 {
@@ -107,15 +109,18 @@ namespace DebugStuff
                 }
                 return;
             }
+			if (window == null) {
+				return;
+			}
 
             window.gameObject.SetActive(showUI);
 
             if (showUI)
             {
                 GameObject mouseObject = CheckForObjectUnderCursor();
-                info.text = mouseObject ? mouseObject.name : "Nothing";
+                info.Text(mouseObject ? mouseObject.name : "Nothing");
 
-                bool modPressed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+                /*bool modPressed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
                 
                 if (modPressed)
                 {
@@ -138,15 +143,23 @@ namespace DebugStuff
 
                     if (tree.Length > limit)
                     {
-                        partTree.text = sb.ToString().Substring(0, limit) + "\n[Truncated]";
+                        objTree.text = sb.ToString().Substring(0, limit) + "\n[Truncated]";
                     }
                     else
                     {
-                        partTree.text = tree;
+                        objTree.text = tree;
                     }
-                }
+                }*/
             }
         }
+
+		void OnObjTreeStateChanged(int index, bool open)
+		{
+		}
+
+		void OnObjTreeClicked(int index)
+		{
+		}
 
         public void OnRenderObject()
         {
@@ -642,54 +655,170 @@ namespace DebugStuff
             Profiler.EndSample();
         }
 
+		private void UpdateLimit(int dir)
+		{
+			limitDepth = Math.Max(0, limitDepth + dir);
+			limitText.Text(limitDepth.ToString());
+			currentDisplayedObject = GetRootObject(hoverObject);
+		}
+
+		private void WeirdCanvasStuff()
+		{
+			var debug = GameObject.FindObjectOfType<DebugScreen>();
+			if (debug) {
+				print("Found DebugScreen");
+				CanvasScaler canvascaler = debug.GetComponentInParent<CanvasScaler>();
+				if (canvascaler) {
+					print("Found CanvasScaler");
+					Canvas canva = debug.GetComponentInParent<Canvas>();
+					if (canva) {
+						print("Found Canvas");
+
+
+						print(canva.referencePixelsPerUnit + " " + canva.pixelPerfect + " " + canva.name);
+						print(canvascaler.referencePixelsPerUnit + " " + canvascaler.dynamicPixelsPerUnit);
+
+
+						canvascaler.dynamicPixelsPerUnit = canvascaler.referencePixelsPerUnit;
+					}
+				}
+			}
+		}
+
         private RectTransform UICreateWindow(GameObject parent)
         {
-            var panelPos = addEmptyPanel(parent);
-            panelPos.localPosition = new Vector3(0, 0, 0);
-            panelPos.sizeDelta = new Vector2(100, 100);
-            panelPos.anchorMin = new Vector2(0, 1);
-            panelPos.anchorMax = new Vector2(0, 1);
-            panelPos.pivot = new Vector2(0, 1);
-            panelPos.localScale = new Vector3(1, 1, 1);
+			var mainWindow = UIKit.CreateUI<Window> (parent.transform as RectTransform, "Window");
+			mainWindow.SetSkin("DebugStuff");
+			ToggleGroup modeGroup;
+			mainWindow
+				.Title("Debug Stuff")
+				.Vertical()
+				.Padding(5, 5, 5, 2)
+				.ControlChildSize(true, true)
+				.ChildForceExpand(false,false)
+				.PreferredSizeFitter(true, true)
+				.Anchor(AnchorPresets.TopLeft)
+				.Pivot(PivotPresets.TopLeft)
+				.PreferredWidth(695)
 
-            var image = panelPos.gameObject.AddComponent<Image>();
-            image.color = new Color(0.25f, 0.25f, 0.25f, 1);
+				.Add<UIText>()
+					.Text("Move the cursor over while holding shift to select an object")
+					.FlexibleLayout(true, false)
+					.Finish()
 
-            var drag = panelPos.gameObject.AddComponent<DragHandler>();
+				.Add<Layout>()
+					.Horizontal()
+					.ControlChildSize(true, true)
+					.ChildForceExpand(false,false)
+					.Add<Layout>()
+						.Horizontal()
+						.ControlChildSize(true, true)
+						.ChildForceExpand(false,false)
+						.Padding(5, 5, 2, 4)
+						.Add<UIButton>()
+							.Text("Dump to log")
+							.OnClick(() => { print(sb.ToString()); })
+							.Finish()
+						.Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
+							.Add<UIToggle>().OnValueChanged((val) => { activeOnly = val; }).Finish()
+							.Add<UIText>().Text("Active Only").Finish()
+							.Finish()
+						.Finish()
+					.Add<UIEmpty>().FlexibleLayout(true, true).Finish()
+					.Add<LayoutPanel>("ModePanel")
+						.Horizontal()
+						.ControlChildSize(true, true)
+						.ChildForceExpand(false,false)
+						.Padding(5, 5, 2, 4)
+						.ToggleGroup(out modeGroup)
+						.Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
+							.Add<UIToggle>().Group(modeGroup).OnValueChanged((b) => { if (b) { mode = Mode.PART; } }).Finish()
+							.Add<UIText>().Text("Part").Finish()
+							.Finish()
+						.Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
+							.Add<UIToggle>().Group(modeGroup).OnValueChanged((b) => { if (b) { mode = Mode.UI; } }).Finish()
+							.Add<UIText>().Text("UI").Finish()
+							.Finish()
+						.Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
+							.Add<UIToggle>().Group(modeGroup).OnValueChanged((b) => { if (b) { mode = Mode.OBJECT; } }).Finish()
+							.Add<UIText>().Text("Object").Finish()
+							.Finish()
+						.Finish()
+					.Add<UIEmpty>().FlexibleLayout(true, true).Finish()
+					.Add<Layout>()
+						.Horizontal()
+						.ControlChildSize(true, true)
+						.ChildForceExpand(false,false)
+						.Padding(5, 5, 2, 4)
+						.Add<UIButton>()
+							.Text("-")
+							.OnClick(() => { UpdateLimit(-1); })
+							.MinSize(30, -1)
+							.Finish()
+						.Add<UIText>(out limitText)
+							.Text(limitDepth.ToString())
+							.Alignment(TextAlignmentOptions .Center)
+							.Size(20)
+							.MinSize(30, -1)
+							.Finish()
+						.Add<UIButton>()
+							.Text("+")
+							.OnClick(() => { UpdateLimit(1); })
+							.MinSize(30, -1)
+							.Finish()
+						.Add<UIButton>()
+							.Text("*").OnClick(WeirdCanvasStuff)
+							.MinSize(30, -1)
+							.Finish()
+						.Finish()
+					.Finish()
 
-            drag.AddEvents(OnInitializePotentialDrag, OnBeginDrag, OnDrag, OnEndDrag);
+				.Add<Layout>()
+					.Horizontal()
+					.ControlChildSize(true, true)
+					.ChildForceExpand(false,false)
+					.Padding(5, 5, 2, 4)
 
-            var layout = panelPos.gameObject.AddComponent<VerticalLayoutGroup>();
-            layout.childAlignment = TextAnchor.UpperLeft;
-            layout.childForceExpandHeight = true;
-            layout.childForceExpandWidth = true;
-            layout.padding = new RectOffset(5, 5, 5, 2);
+					.Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
+						.Add<UIToggle>().OnValueChanged((val) => labels = val).Finish()
+						.Add<UIText>().Text("Labels").Finish()
+						.Finish()
+					.Add<Layout>().Horizontal().ControlChildSize(true, true) .ChildForceExpand(true, true)
+						.Add<UIToggle>().OnValueChanged((val) => transforms = val).Finish()
+						.Add<UIText>().Text("Transforms").Finish()
+						.Finish()
+					.Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
+						.Add<UIToggle>().OnValueChanged((val) => colliders = val).Finish()
+						.Add<UIText>().Text("Colliders").Finish()
+						.Finish()
+					.Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
+						.Add<UIToggle>().OnValueChanged((val) => meshes = val).Finish()
+						.Add<UIText>().Text("Meshes").Finish()
+						.Finish()
+					.Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
+						.Add<UIToggle>().OnValueChanged((val) => bounds = val).Finish()
+						.Add<UIText>().Text("Bounds").Finish()
+						.Finish()
+					.Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
+						.Add<UIToggle>().OnValueChanged((val) => joints = val).Finish()
+						.Add<UIText>().Text("Joints").Finish()
+						.Finish()
+					.Finish()
+				.Add<UIText>(out info)
+					/*.Font(monoSpaceFont)*/
+					.Size(12)
+					.FlexibleLayout(true, false)
+					.Finish()
+				.Add<TreeView>(out objTree)
+					.Items(objTreeItems)
+					.OnClick(OnObjTreeClicked)
+					.OnStateChanged(OnObjTreeStateChanged)
+					.PreferredSize(-1,250)
+					.FlexibleLayout(true, true)
+					.Finish()
+				.Finish();
 
-            var csf = panelPos.gameObject.AddComponent<ContentSizeFitter>();
-            csf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-            addText(panelPos.gameObject, "Move the cursor over while holding shift to select an object");
-
-            var buttonPanel = addEmptyPanel(panelPos.gameObject);
-
-            var bpl = buttonPanel.gameObject.AddComponent<HorizontalLayoutGroup>();
-            bpl.childAlignment = TextAnchor.UpperCenter;
-            bpl.childForceExpandHeight = true;
-            bpl.childForceExpandWidth = true;
-            bpl.padding = new RectOffset(5, 5, 2, 5);
-
-            var bpsf = buttonPanel.gameObject.AddComponent<ContentSizeFitter>();
-            bpsf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-            bpsf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            
-            addButton(buttonPanel.gameObject, "Dump to log", (b) => { print(sb.ToString()); });
-
-            addButton(buttonPanel.gameObject, getSwitchString(activeOnly, "Active Only"), (b) => 
-            {
-                activeOnly = !activeOnly;
-                b.text = getSwitchString(activeOnly, "Active Only");
-            });
+            return mainWindow.rectTransform;
 
             //addButton(buttonPanel.gameObject, "List", (b) =>
             //{
@@ -699,237 +828,6 @@ namespace DebugStuff
             //        print(o.GetType() + "- " + o.name);
             //    }
             //});
-
-            addButton(buttonPanel.gameObject, mode.ToString(), (b) =>
-            {
-                hoverObject = currentDisplayedObject = previousDisplayedObject = null;
-                partTree.text = "";
-                switch (mode)
-                {
-                    case Mode.PART:
-                        mode = Mode.UI;
-                        break;
-                    case Mode.UI:
-                        mode = Mode.OBJECT;
-                        break;
-                    case Mode.OBJECT:
-                        mode = Mode.PART;
-                        break;
-                }
-                b.text = mode.ToString();
-            });
-
-            addButton(buttonPanel.gameObject, "-", (b) =>
-            {
-                limitDepth = Math.Max(0, limitDepth - 1);
-                limitText.text = limitDepth.ToString();
-                currentDisplayedObject = GetRootObject(hoverObject);
-            });
-
-            limitText = addText(buttonPanel.gameObject, limitDepth.ToString());
-            limitText.alignment = TextAnchor.MiddleCenter;
-            limitText.fontSize = 20;
-
-            addButton(buttonPanel.gameObject, "+", (b) =>
-            {
-                limitDepth++;
-                limitText.text = limitDepth.ToString();
-                currentDisplayedObject = GetRootObject(hoverObject);
-            });
-
-
-            addButton(buttonPanel.gameObject, "*", (b) =>
-            {
-                var debug = GameObject.FindObjectOfType<DebugScreen>();
-                print("Found DebugScreen");
-                CanvasScaler canvascaler = debug.GetComponentInParent<CanvasScaler>();
-                print("Found CanvasScaler");
-                Canvas canva = debug.GetComponentInParent<Canvas>();
-                print("Found Canvas");
-
-
-                print(canva.referencePixelsPerUnit + " " + canva.pixelPerfect + " " + canva.name);
-                print(canvascaler.referencePixelsPerUnit + " " + canvascaler.dynamicPixelsPerUnit);
-
-
-                canvascaler.dynamicPixelsPerUnit = canvascaler.referencePixelsPerUnit;
-
-            });
-
-
-
-            var switchPanel = addEmptyPanel(panelPos.gameObject);
-
-            var sl = switchPanel.gameObject.AddComponent<HorizontalLayoutGroup>();
-            sl.childAlignment = TextAnchor.UpperCenter;
-            sl.childForceExpandHeight = true;
-            sl.childForceExpandWidth = true;
-            sl.padding = new RectOffset(5, 5, 5, 5);
-
-            var ssf = switchPanel.gameObject.AddComponent<ContentSizeFitter>();
-            ssf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-            ssf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-
-            addButton(switchPanel.gameObject, getSwitchString(labels, "Labels"), (b) =>
-            {
-                labels = !labels;
-                b.text = getSwitchString(labels, "Labels");
-            });
-
-            addButton(switchPanel.gameObject, getSwitchString(transforms, "Transforms"), (b) =>
-            {
-                transforms = !transforms;
-                b.text = getSwitchString(transforms, "Transforms");
-            });
-
-            addButton(switchPanel.gameObject, getSwitchString(colliders, "Colliders"), (b) =>
-            {
-                colliders = !colliders;
-                b.text = getSwitchString(colliders, "Colliders");
-            });
-
-            addButton(switchPanel.gameObject, getSwitchString(meshes, "Meshes"), (b) =>
-            {
-                meshes = !meshes;
-                b.text = getSwitchString(meshes, "Meshes");
-            });
-
-            addButton(switchPanel.gameObject, getSwitchString(bounds, "Bounds"), (b) =>
-            {
-                bounds = !bounds;
-                b.text = getSwitchString(bounds, "Bounds");
-            });
-
-            addButton(switchPanel.gameObject, getSwitchString(joints, "Joints"), (b) =>
-            {
-                joints = !joints;
-                b.text = getSwitchString(joints, "Joints");
-            });
-
-            info = addText(panelPos.gameObject, "");
-            info.font = monoSpaceFont;
-            info.fontSize = 12;
-
-            partTree = addText(panelPos.gameObject, "");
-            partTree.font = monoSpaceFont;
-            partTree.fontSize = 11;
-
-            return panelPos;
-        }
-
-        // Bow to my advanced UI skills !
-        private string getSwitchString(bool state, string label)
-        {
-            return string.Format("[{0}] {1}", state ? "X" : " ", label);
-        }
-
-        private Button addButton(GameObject parent, string text, UnityAction<Text> click)
-        {
-            GameObject buttonObject = new GameObject("Button");
-
-
-            buttonObject.layer = LayerMask.NameToLayer("UI");
-
-            RectTransform trans = buttonObject.AddComponent<RectTransform>();
-            trans.localScale = new Vector3(1.0f, 1.0f, 1.0f);
-            trans.localPosition.Set(0, 0, 0);
-
-            Image image = buttonObject.AddComponent<Image>();
-            image.color = new Color(0.5f, 0f, 0, 0.5f);
-
-            Button button = buttonObject.AddComponent<Button>();
-            button.interactable = true;
-
-            Text textObj = addText(buttonObject, text);
-
-            button.onClick.AddListener(() => click(textObj));
-
-            var csf = buttonObject.AddComponent<ContentSizeFitter>();
-            csf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-            var layout = buttonObject.AddComponent<VerticalLayoutGroup>();
-            layout.childAlignment = TextAnchor.UpperLeft;
-            layout.childForceExpandHeight = true;
-            layout.childForceExpandWidth = true;
-            layout.padding = new RectOffset(5, 5, 5, 5);
-
-            buttonObject.transform.SetParent(parent.transform, false);
-
-            return button;
-        }
-
-
-        private static Text addText(GameObject parent, string s)
-        {
-            GameObject text1Obj = new GameObject("Text");
-
-            text1Obj.layer = LayerMask.NameToLayer("UI");
-
-            RectTransform trans = text1Obj.AddComponent<RectTransform>();
-            trans.localScale = new Vector3(1, 1, 1);
-            trans.localPosition.Set(0, 0, 0);
-
-            Text text = text1Obj.AddComponent<Text>();
-            text.supportRichText = true;
-            text.text = s;
-            text.fontSize = 14;
-            text.font = UISkinManager.defaultSkin.font;
-
-            text.alignment = TextAnchor.UpperLeft;
-            text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            text.verticalOverflow = VerticalWrapMode.Overflow;
-            text.color = Color.white;
-            text1Obj.transform.SetParent(parent.transform, false);
-
-            return text;
-        }
-
-        private void OnInitializePotentialDrag(PointerEventData e)
-        {
-            //print("OnInitializePotentialDrag");
-            originalPanelLocalPosition = window.localPosition;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle((RectTransform)window.parent.transform, e.position, e.pressEventCamera, out originalLocalPointerPosition);
-        }
-
-        private void OnBeginDrag(PointerEventData e)
-        {
-            //print("onBeginDrag");
-        }
-
-        private void OnDrag(PointerEventData e)
-        {
-            Vector2 localPointerPosition;
-            if (RectTransformUtility.ScreenPointToLocalPointInRectangle((RectTransform)window.parent.transform, e.position, e.pressEventCamera, out localPointerPosition))
-            {
-                Vector3 offsetToOriginal = localPointerPosition - originalLocalPointerPosition;
-                window.localPosition = originalPanelLocalPosition + offsetToOriginal;
-            }
-        }
-
-        private void OnEndDrag(PointerEventData e)
-        {
-            //print("onEndDrag");
-        }
-
-        private static RectTransform addEmptyPanel(GameObject parent)
-        {
-            GameObject panelObj = new GameObject(parent.name + "Panel");
-            panelObj.layer = LayerMask.NameToLayer("UI");
-
-            RectTransform panelRect = panelObj.AddComponent<RectTransform>();
-
-            // Top Left corner as base
-            panelRect.anchorMin = new Vector2(0, 1);
-            panelRect.anchorMax = new Vector2(0, 1);
-            panelRect.pivot = new Vector2(0, 1);
-            panelRect.localPosition = new Vector3(0, 0, 0);
-            panelRect.localScale = new Vector3(1, 1, 1);
-
-            panelObj.transform.SetParent(parent.transform, true);
-
-            return panelRect;
         }
 
         public new static void print(object message)
