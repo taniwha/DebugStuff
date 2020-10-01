@@ -662,7 +662,7 @@ namespace DebugStuff
 			currentDisplayedObject = GetRootObject(hoverObject);
 		}
 
-		private void WeirdCanvasStuff()
+		private void DebugCanvasFixerUpper()
 		{
 			var debug = GameObject.FindObjectOfType<DebugScreen>();
 			if (debug) {
@@ -767,7 +767,7 @@ namespace DebugStuff
 							.MinSize(30, -1)
 							.Finish()
 						.Add<UIButton>()
-							.Text("*").OnClick(WeirdCanvasStuff)
+							.Text("*").OnClick(DebugCanvasFixerUpper)
 							.MinSize(30, -1)
 							.Finish()
 						.Finish()
