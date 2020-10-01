@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 using KSP.UI;
 using KSP.UI.Dialogs;
@@ -39,9 +40,81 @@ namespace DebugStuff
         //private GUIStyle styleWindow;
         //private Rect winPos = new Rect(300, 100, 400, 600);
 
+		class ComponentWrapper
+		{
+			public class MemberItemList : List<TreeView.TreeItem> {}
+			const BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+
+			Component component;
+			string name;
+			MemberInfo []members;
+			int memberCount; // of displaying members
+
+			public ComponentWrapper(Component component)
+			{
+				this.component = component;
+				members = component.GetType().GetMembers(bindingFlags);
+				name = component.GetType().Name;
+				for (int i = 0; i < members.Length; i++) {
+					if (members[i] is FieldInfo
+						|| members[i] is PropertyInfo) {
+						++memberCount;
+					}
+				}
+			}
+
+			public int Count { get { return memberCount; } }
+			public string Name { get { return name; } }
+
+			string GetValue(FieldInfo fi)
+			{
+				if (fi == null) {
+					return "field info broke";
+				}
+				var obj = fi.GetValue(component);
+				if (obj != null) {
+					return $"{fi.Name} - {obj.ToString()}";
+				} else {
+					return $"{fi.Name} - null";
+				}
+			}
+
+			string GetValue(PropertyInfo pi)
+			{
+				if (pi == null) {
+					return "property info broke";
+				}
+				var obj = pi.GetValue(component);
+				if (obj != null) {
+					return $"{pi.Name} - {obj.ToString()}";
+				} else {
+					return $"{pi.Name} - null";
+				}
+			}
+
+			public MemberItemList GetMembers()
+			{
+				var list = new MemberItemList();
+				for (int i = 0; i < members.Length; i++) {
+					TreeView.TreeItem item = null;;
+					if (members[i] is FieldInfo fi) {
+						item = new TreeView.TreeItem (fi, i => GetValue(i as FieldInfo), i => false, 1);
+					} else if (members[i] is PropertyInfo pi) {
+						item = new TreeView.TreeItem (pi, i => GetValue(i as PropertyInfo), i => false, 1);
+					}
+					if (item != null) {
+						list.Add(item);
+					}
+				}
+				return list;
+			}
+		}
+
         private static RectTransform window;
         private static TreeView objTreeView;
 		private static List<TreeView.TreeItem> objTreeItems = new List<TreeView.TreeItem> ();
+		private static TreeView compTreeView;
+		private static List<TreeView.TreeItem> compTreeItems = new List<TreeView.TreeItem> ();
         private static UIText info;
         private static UIText limitText;
         private static Font monoSpaceFont;
@@ -124,7 +197,10 @@ namespace DebugStuff
                 
                 if (modPressed)
                 {
-                    hoverObject = mouseObject;
+					if (hoverObject != mouseObject) {
+						hoverObject = mouseObject;
+						RebuildCompView(hoverObject);
+					}
                     currentDisplayedObject = GetRootObject(hoverObject);
                 }
                 
@@ -159,8 +235,27 @@ namespace DebugStuff
 			objTreeView.Items(objTreeItems);
 		}
 
+		void OnCompTreeStateChanged(int index, bool open)
+		{
+			int level = compTreeItems[index].Level;
+			var comp = compTreeItems[index].Object as ComponentWrapper;
+			if (open) {
+				compTreeItems.InsertRange(index + 1, comp.GetMembers());
+			} else {
+				int count = 0;
+				int ind = index + 1;
+				while (ind < compTreeItems.Count && compTreeItems[ind].Level > level) {
+					++count;
+					++ind;
+				}
+				compTreeItems.RemoveRange(index + 1, count);
+			}
+			compTreeView.Items(compTreeItems);
+		}
+
 		void OnObjTreeClicked(int index)
 		{
+			RebuildCompView(objTreeItems[index].Object as GameObject);
 		}
 
         public void OnRenderObject()
@@ -234,10 +329,20 @@ namespace DebugStuff
 		private void RebuildHierarchy(GameObject p)
 		{
 			objTreeItems.Clear();
-
 			CollectObjects (p, 0);
-
 			objTreeView.Items(objTreeItems);
+		}
+
+		private void RebuildCompView(GameObject obj)
+		{
+			compTreeItems.Clear();
+			var components = obj.GetComponents<Component>();
+			for (int i = 0; i < components.Length; i++) {
+				var comp = new ComponentWrapper(components[i]);
+				var item = new TreeView.TreeItem (comp, c => (c as ComponentWrapper).Name, c => (c as ComponentWrapper).Count > 0, 0);
+				compTreeItems.Add(item);
+			}
+			compTreeView.Items(compTreeItems);
 		}
 
         private void DumpPartHierarchy(GameObject p)
@@ -846,6 +951,13 @@ namespace DebugStuff
 					.OnClick(OnObjTreeClicked)
 					.OnStateChanged(OnObjTreeStateChanged)
 					.PreferredSize(-1,250)
+					.FlexibleLayout(true, true)
+					.Finish()
+				.Add<TreeView>(out compTreeView)
+					.Items(objTreeItems)
+					//.OnClick(OnCompTreeClicked)
+					.OnStateChanged(OnCompTreeStateChanged)
+					.PreferredSize(-1,150)
 					.FlexibleLayout(true, true)
 					.Finish()
 				.Finish();
