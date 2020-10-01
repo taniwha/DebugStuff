@@ -20,8 +20,8 @@ namespace DebugStuff
     {
         private int flip;
         
-        private GameObject hoverObject = null;
-        //private GameObject previousDisplayedObject;
+        private GameObject hoverObject;
+        private GameObject previousDisplayedObject;
         private GameObject currentDisplayedObject;
         private StringBuilder sb = new StringBuilder();
         private bool showUI;
@@ -40,7 +40,7 @@ namespace DebugStuff
         //private Rect winPos = new Rect(300, 100, 400, 600);
 
         private static RectTransform window;
-        private static TreeView objTree;
+        private static TreeView objTreeView;
 		private static List<TreeView.TreeItem> objTreeItems = new List<TreeView.TreeItem> ();
         private static UIText info;
         private static UIText limitText;
@@ -120,7 +120,7 @@ namespace DebugStuff
                 GameObject mouseObject = CheckForObjectUnderCursor();
                 info.Text(mouseObject ? mouseObject.name : "Nothing");
 
-                /*bool modPressed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+                bool modPressed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
                 
                 if (modPressed)
                 {
@@ -131,30 +131,32 @@ namespace DebugStuff
                 if (currentDisplayedObject && (currentDisplayedObject != previousDisplayedObject))
                 {
                     previousDisplayedObject = currentDisplayedObject;
-
-                    DumpPartHierarchy(currentDisplayedObject);
-
-                    // A canvas can not have more than 65000 vertex
-                    // and a char is 4 vertex
-                    int limit = 16000;
-                    // not exactly awesome but it works
-
-                    string tree = sb.ToString();
-
-                    if (tree.Length > limit)
-                    {
-                        objTree.text = sb.ToString().Substring(0, limit) + "\n[Truncated]";
-                    }
-                    else
-                    {
-                        objTree.text = tree;
-                    }
-                }*/
+					RebuildHierarchy(currentDisplayedObject);
+                }
             }
         }
 
 		void OnObjTreeStateChanged(int index, bool open)
 		{
+			int level = objTreeItems[index].Level;
+			var obj = objTreeItems[index].Object as GameObject;
+			if (open) {
+				var newItems = new List<TreeView.TreeItem> ();
+				for (int i = 0; i < obj.transform.childCount; i++) {
+					var child = obj.transform.GetChild(i).gameObject;
+					newItems.Add(CreateObjTreeItem (child, level + 1));
+				}
+				objTreeItems.InsertRange(index + 1, newItems);
+			} else {
+				int count = 0;
+				int ind = index + 1;
+				while (ind < objTreeItems.Count && objTreeItems[ind].Level > level) {
+					++count;
+					++ind;
+				}
+				objTreeItems.RemoveRange(index + 1, count);
+			}
+			objTreeView.Items(objTreeItems);
 		}
 
 		void OnObjTreeClicked(int index)
@@ -207,6 +209,36 @@ namespace DebugStuff
             if (showUI && currentDisplayedObject && mode != Mode.UI)
                 DrawLabels(currentDisplayedObject);
         }
+
+		static TreeView.TreeItem CreateObjTreeItem (GameObject obj, int level)
+		{
+			return new TreeView.TreeItem (obj, go => (go as GameObject).name, go => (go as GameObject).transform.childCount != 0, level);
+		}
+
+		void CollectObjects(GameObject obj, int level)
+		{
+			bool open = obj != hoverObject && hoverObject.transform.IsChildOf(obj.transform);
+
+			var item = CreateObjTreeItem(obj, level);
+			item.IsOpen = open;
+			objTreeItems.Add (item);
+
+			if (open) {
+				for (int i = 0; i < obj.transform.childCount; i++) {
+					var child = obj.transform.GetChild(i).gameObject;
+					CollectObjects (child, level + 1);
+				}
+			}
+		}
+
+		private void RebuildHierarchy(GameObject p)
+		{
+			objTreeItems.Clear();
+
+			CollectObjects (p, 0);
+
+			objTreeView.Items(objTreeItems);
+		}
 
         private void DumpPartHierarchy(GameObject p)
         {
@@ -809,7 +841,7 @@ namespace DebugStuff
 					.Size(12)
 					.FlexibleLayout(true, false)
 					.Finish()
-				.Add<TreeView>(out objTree)
+				.Add<TreeView>(out objTreeView)
 					.Items(objTreeItems)
 					.OnClick(OnObjTreeClicked)
 					.OnStateChanged(OnObjTreeStateChanged)
