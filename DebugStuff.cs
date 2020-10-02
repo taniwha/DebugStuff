@@ -6,6 +6,7 @@ using KSP.UI;
 using KSP.UI.Dialogs;
 using KSP.UI.Screens.DebugToolbar;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.Profiling;
@@ -112,11 +113,13 @@ namespace DebugStuff
 
         private static RectTransform window;
         private static TreeView objTreeView;
+		private static List<GameObject> rootObjects = new List<GameObject> ();
 		private static List<TreeView.TreeItem> objTreeItems = new List<TreeView.TreeItem> ();
 		private static TreeView compTreeView;
 		private static List<TreeView.TreeItem> compTreeItems = new List<TreeView.TreeItem> ();
         private static UIText info;
         private static UIText limitText;
+		private static UIButton sceneObjectsButton;
         private static Font monoSpaceFont;
 
         private int limitDepth = 2;
@@ -125,7 +128,8 @@ namespace DebugStuff
         {
             PART,
             UI,
-            OBJECT
+            OBJECT,
+			SCENE,
         }
 
         public void Awake()
@@ -197,11 +201,15 @@ namespace DebugStuff
                 
                 if (modPressed)
                 {
-					if (hoverObject != mouseObject) {
-						hoverObject = mouseObject;
-						RebuildCompView(hoverObject);
+					if (mode == Mode.SCENE) {
+						currentDisplayedObject = null;
+					} else {
+						if (hoverObject != mouseObject) {
+							hoverObject = mouseObject;
+							RebuildCompView(hoverObject);
+						}
+						currentDisplayedObject = GetRootObject(hoverObject);
 					}
-                    currentDisplayedObject = GetRootObject(hoverObject);
                 }
                 
                 if (currentDisplayedObject && (currentDisplayedObject != previousDisplayedObject))
@@ -312,7 +320,7 @@ namespace DebugStuff
 
 		void CollectObjects(GameObject obj, int level)
 		{
-			bool open = obj != hoverObject && hoverObject.transform.IsChildOf(obj.transform);
+			bool open = obj != hoverObject && hoverObject && hoverObject.transform.IsChildOf(obj.transform);
 
 			var item = CreateObjTreeItem(obj, level);
 			item.IsOpen = open;
@@ -330,6 +338,16 @@ namespace DebugStuff
 		{
 			objTreeItems.Clear();
 			CollectObjects (p, 0);
+			objTreeView.Items(objTreeItems);
+		}
+
+		private void RebuildRootObjects ()
+		{
+			SceneManager.GetActiveScene().GetRootGameObjects(rootObjects);
+			objTreeItems.Clear();
+			for (int i = 0; i < rootObjects.Count; i++) {
+				CollectObjects (rootObjects[i], 0);
+			}
 			objTreeView.Items(objTreeItems);
 		}
 
@@ -799,6 +817,14 @@ namespace DebugStuff
 			currentDisplayedObject = GetRootObject(hoverObject);
 		}
 
+		private void UpdateSceneLObjectsButton(bool on)
+		{
+			if (on) {
+				mode = Mode.SCENE;
+			}
+			sceneObjectsButton.interactable = on;
+		}
+
 		private void DebugCanvasFixerUpper()
 		{
 			var debug = GameObject.FindObjectOfType<DebugScreen>();
@@ -879,6 +905,10 @@ namespace DebugStuff
 						.Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
 							.Add<UIToggle>().SetIsOnWithoutNotify(mode == Mode.OBJECT).Group(modeGroup).OnValueChanged((b) => { if (b) { mode = Mode.OBJECT; } }).Finish()
 							.Add<UIText>().Text("Object").Finish()
+							.Finish()
+						.Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
+							.Add<UIToggle>().SetIsOnWithoutNotify(mode == Mode.SCENE).Group(modeGroup).OnValueChanged((b) => { UpdateSceneLObjectsButton (b); }).Finish()
+							.Add<UIButton>(out sceneObjectsButton).Text("Scene").OnClick(RebuildRootObjects).Finish()
 							.Finish()
 						.Finish()
 					.Add<UIEmpty>().FlexibleLayout(true, true).Finish()
@@ -963,6 +993,7 @@ namespace DebugStuff
 					.Finish()
 				.Finish();
 
+			sceneObjectsButton.interactable = mode == Mode.SCENE;
             return mainWindow.rectTransform;
 
             //addButton(buttonPanel.gameObject, "List", (b) =>
