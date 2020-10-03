@@ -25,6 +25,7 @@ namespace DebugStuff
         private GameObject hoverObject;
         private GameObject previousDisplayedObject;
         private GameObject currentDisplayedObject;
+		private GameObject boundsDisplayObject;
         private StringBuilder sb = new StringBuilder();
         private bool showUI;
         private Mode mode;
@@ -210,6 +211,7 @@ namespace DebugStuff
 						}
 						currentDisplayedObject = GetRootObject(hoverObject);
 					}
+					boundsDisplayObject = currentDisplayedObject;
                 }
                 
                 if (currentDisplayedObject && (currentDisplayedObject != previousDisplayedObject))
@@ -263,13 +265,14 @@ namespace DebugStuff
 
 		void OnObjTreeClicked(int index)
 		{
-			RebuildCompView(objTreeItems[index].Object as GameObject);
+			boundsDisplayObject = objTreeItems[index].Object as GameObject;
+			RebuildCompView(boundsDisplayObject);
 		}
 
         public void OnRenderObject()
         {
-            if (showUI && currentDisplayedObject)
-                DrawObjects(currentDisplayedObject);
+            if (showUI && boundsDisplayObject)
+                DrawObjects(boundsDisplayObject);
         }
 
         public void InitFont()
@@ -815,6 +818,7 @@ namespace DebugStuff
 			limitDepth = Math.Max(0, limitDepth + dir);
 			limitText.Text(limitDepth.ToString());
 			currentDisplayedObject = GetRootObject(hoverObject);
+			boundsDisplayObject = currentDisplayedObject;
 		}
 
 		private void UpdateSceneLObjectsButton(bool on)
