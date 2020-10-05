@@ -75,9 +75,9 @@ namespace DebugStuff
 				}
 				var obj = fi.GetValue(component);
 				if (obj != null) {
-					return $"{fi.Name} - {obj.ToString()}";
+					return $"{fi.Name}:  {obj.ToString()}";
 				} else {
-					return $"{fi.Name} - null";
+					return $"{fi.Name}:  null";
 				}
 			}
 
@@ -88,9 +88,9 @@ namespace DebugStuff
 				}
 				var obj = pi.GetValue(component);
 				if (obj != null) {
-					return $"{pi.Name} - {obj.ToString()}";
+					return $"{pi.Name}:  {obj.ToString()}";
 				} else {
-					return $"{pi.Name} - null";
+					return $"{pi.Name}:  null";
 				}
 			}
 
