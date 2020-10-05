@@ -22,11 +22,11 @@ namespace DebugStuff
     {
         private int flip;
         
-		private Scene DontDestroyOnLoadScene;
+        private Scene DontDestroyOnLoadScene;
         private GameObject hoverObject;
         private GameObject previousDisplayedObject;
         private GameObject currentDisplayedObject;
-		private GameObject boundsDisplayObject;
+        private GameObject boundsDisplayObject;
         private StringBuilder sb = new StringBuilder();
         private bool showUI;
         private Mode mode;
@@ -43,85 +43,85 @@ namespace DebugStuff
         //private GUIStyle styleWindow;
         //private Rect winPos = new Rect(300, 100, 400, 600);
 
-		class ComponentWrapper
-		{
-			public class MemberItemList : List<TreeView.TreeItem> {}
-			const BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+        class ComponentWrapper
+        {
+            public class MemberItemList : List<TreeView.TreeItem> {}
+            const BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 
-			Component component;
-			string name;
-			MemberInfo []members;
-			int memberCount; // of displaying members
+            Component component;
+            string name;
+            MemberInfo []members;
+            int memberCount; // of displaying members
 
-			public ComponentWrapper(Component component)
-			{
-				this.component = component;
-				members = component.GetType().GetMembers(bindingFlags);
-				name = component.GetType().Name;
-				for (int i = 0; i < members.Length; i++) {
-					if (members[i] is FieldInfo
-						|| members[i] is PropertyInfo) {
-						++memberCount;
-					}
-				}
-			}
+            public ComponentWrapper(Component component)
+            {
+                this.component = component;
+                members = component.GetType().GetMembers(bindingFlags);
+                name = component.GetType().Name;
+                for (int i = 0; i < members.Length; i++) {
+                    if (members[i] is FieldInfo
+                        || members[i] is PropertyInfo) {
+                        ++memberCount;
+                    }
+                }
+            }
 
-			public int Count { get { return memberCount; } }
-			public string Name { get { return name; } }
+            public int Count { get { return memberCount; } }
+            public string Name { get { return name; } }
 
-			string GetValue(FieldInfo fi)
-			{
-				if (fi == null) {
-					return "field info broke";
-				}
-				var obj = fi.GetValue(component);
-				if (obj != null) {
-					return $"{fi.Name}:  {obj.ToString()}";
-				} else {
-					return $"{fi.Name}:  null";
-				}
-			}
+            string GetValue(FieldInfo fi)
+            {
+                if (fi == null) {
+                    return "field info broke";
+                }
+                var obj = fi.GetValue(component);
+                if (obj != null) {
+                    return $"{fi.Name}:  {obj.ToString()}";
+                } else {
+                    return $"{fi.Name}:  null";
+                }
+            }
 
-			string GetValue(PropertyInfo pi)
-			{
-				if (pi == null) {
-					return "property info broke";
-				}
-				var obj = pi.GetValue(component);
-				if (obj != null) {
-					return $"{pi.Name}:  {obj.ToString()}";
-				} else {
-					return $"{pi.Name}:  null";
-				}
-			}
+            string GetValue(PropertyInfo pi)
+            {
+                if (pi == null) {
+                    return "property info broke";
+                }
+                var obj = pi.GetValue(component);
+                if (obj != null) {
+                    return $"{pi.Name}:  {obj.ToString()}";
+                } else {
+                    return $"{pi.Name}:  null";
+                }
+            }
 
-			public MemberItemList GetMembers()
-			{
-				var list = new MemberItemList();
-				for (int i = 0; i < members.Length; i++) {
-					TreeView.TreeItem item = null;;
-					if (members[i] is FieldInfo fi) {
-						item = new TreeView.TreeItem (fi, i => GetValue(i as FieldInfo), i => false, 1);
-					} else if (members[i] is PropertyInfo pi) {
-						item = new TreeView.TreeItem (pi, i => GetValue(i as PropertyInfo), i => false, 1);
-					}
-					if (item != null) {
-						list.Add(item);
-					}
-				}
-				return list;
-			}
-		}
+            public MemberItemList GetMembers()
+            {
+                var list = new MemberItemList();
+                for (int i = 0; i < members.Length; i++) {
+                    TreeView.TreeItem item = null;;
+                    if (members[i] is FieldInfo fi) {
+                        item = new TreeView.TreeItem (fi, i => GetValue(i as FieldInfo), i => false, 1);
+                    } else if (members[i] is PropertyInfo pi) {
+                        item = new TreeView.TreeItem (pi, i => GetValue(i as PropertyInfo), i => false, 1);
+                    }
+                    if (item != null) {
+                        list.Add(item);
+                    }
+                }
+                return list;
+            }
+        }
 
         private static RectTransform window;
         private static TreeView objTreeView;
-		private static List<GameObject> rootObjects = new List<GameObject> ();
-		private static List<TreeView.TreeItem> objTreeItems = new List<TreeView.TreeItem> ();
-		private static TreeView compTreeView;
-		private static List<TreeView.TreeItem> compTreeItems = new List<TreeView.TreeItem> ();
+        private static List<GameObject> rootObjects = new List<GameObject> ();
+        private static List<TreeView.TreeItem> objTreeItems = new List<TreeView.TreeItem> ();
+        private static TreeView compTreeView;
+        private static List<TreeView.TreeItem> compTreeItems = new List<TreeView.TreeItem> ();
         private static UIText info;
         private static UIText limitText;
-		private static UIButton sceneObjectsButton;
+        private static UIButton sceneObjectsButton;
         private static Font monoSpaceFont;
 
         private int limitDepth = 2;
@@ -131,13 +131,13 @@ namespace DebugStuff
             PART,
             UI,
             OBJECT,
-			SCENE,
+            SCENE,
         }
 
         public void Awake()
         {
             DontDestroyOnLoad(this);
-			DontDestroyOnLoadScene = gameObject.scene;
+            DontDestroyOnLoadScene = gameObject.scene;
         }
 
         public void Update()
@@ -155,7 +155,7 @@ namespace DebugStuff
             }
             flip = 0;
 
-			//FIXME KodeUI loads styles to late for this to work in the loading scene
+            //FIXME KodeUI loads styles to late for this to work in the loading scene
             if (showUI && window == null)
             {
                 if (UIMasterController.Instance != null)
@@ -189,9 +189,9 @@ namespace DebugStuff
                 }
                 return;
             }
-			if (window == null) {
-				return;
-			}
+            if (window == null) {
+                return;
+            }
 
             window.gameObject.SetActive(showUI);
 
@@ -204,72 +204,72 @@ namespace DebugStuff
                 
                 if (modPressed)
                 {
-					if (mode == Mode.SCENE) {
-						currentDisplayedObject = null;
-					} else {
-						if (hoverObject != mouseObject) {
-							hoverObject = mouseObject;
-							RebuildCompView(hoverObject);
-						}
-						currentDisplayedObject = GetRootObject(hoverObject);
-					}
-					boundsDisplayObject = currentDisplayedObject;
+                    if (mode == Mode.SCENE) {
+                        currentDisplayedObject = null;
+                    } else {
+                        if (hoverObject != mouseObject) {
+                            hoverObject = mouseObject;
+                            RebuildCompView(hoverObject);
+                        }
+                        currentDisplayedObject = GetRootObject(hoverObject);
+                    }
+                    boundsDisplayObject = currentDisplayedObject;
                 }
                 
                 if (currentDisplayedObject && (currentDisplayedObject != previousDisplayedObject))
                 {
                     previousDisplayedObject = currentDisplayedObject;
-					RebuildHierarchy(currentDisplayedObject);
+                    RebuildHierarchy(currentDisplayedObject);
                 }
             }
         }
 
-		void OnObjTreeStateChanged(int index, bool open)
-		{
-			int level = objTreeItems[index].Level;
-			var obj = objTreeItems[index].Object as GameObject;
-			if (open) {
-				var newItems = new List<TreeView.TreeItem> ();
-				for (int i = 0; i < obj.transform.childCount; i++) {
-					var child = obj.transform.GetChild(i).gameObject;
-					newItems.Add(CreateObjTreeItem (child, level + 1));
-				}
-				objTreeItems.InsertRange(index + 1, newItems);
-			} else {
-				int count = 0;
-				int ind = index + 1;
-				while (ind < objTreeItems.Count && objTreeItems[ind].Level > level) {
-					++count;
-					++ind;
-				}
-				objTreeItems.RemoveRange(index + 1, count);
-			}
-			objTreeView.Items(objTreeItems);
-		}
+        void OnObjTreeStateChanged(int index, bool open)
+        {
+            int level = objTreeItems[index].Level;
+            var obj = objTreeItems[index].Object as GameObject;
+            if (open) {
+                var newItems = new List<TreeView.TreeItem> ();
+                for (int i = 0; i < obj.transform.childCount; i++) {
+                    var child = obj.transform.GetChild(i).gameObject;
+                    newItems.Add(CreateObjTreeItem (child, level + 1));
+                }
+                objTreeItems.InsertRange(index + 1, newItems);
+            } else {
+                int count = 0;
+                int ind = index + 1;
+                while (ind < objTreeItems.Count && objTreeItems[ind].Level > level) {
+                    ++count;
+                    ++ind;
+                }
+                objTreeItems.RemoveRange(index + 1, count);
+            }
+            objTreeView.Items(objTreeItems);
+        }
 
-		void OnCompTreeStateChanged(int index, bool open)
-		{
-			int level = compTreeItems[index].Level;
-			var comp = compTreeItems[index].Object as ComponentWrapper;
-			if (open) {
-				compTreeItems.InsertRange(index + 1, comp.GetMembers());
-			} else {
-				int count = 0;
-				int ind = index + 1;
-				while (ind < compTreeItems.Count && compTreeItems[ind].Level > level) {
-					++count;
-					++ind;
-				}
-				compTreeItems.RemoveRange(index + 1, count);
-			}
-			compTreeView.Items(compTreeItems);
-		}
+        void OnCompTreeStateChanged(int index, bool open)
+        {
+            int level = compTreeItems[index].Level;
+            var comp = compTreeItems[index].Object as ComponentWrapper;
+            if (open) {
+                compTreeItems.InsertRange(index + 1, comp.GetMembers());
+            } else {
+                int count = 0;
+                int ind = index + 1;
+                while (ind < compTreeItems.Count && compTreeItems[ind].Level > level) {
+                    ++count;
+                    ++ind;
+                }
+                compTreeItems.RemoveRange(index + 1, count);
+            }
+            compTreeView.Items(compTreeItems);
+        }
 
-		void OnObjTreeClicked(int index)
-		{
-			boundsDisplayObject = objTreeItems[index].Object as GameObject;
-			RebuildCompView(boundsDisplayObject);
-		}
+        void OnObjTreeClicked(int index)
+        {
+            boundsDisplayObject = objTreeItems[index].Object as GameObject;
+            RebuildCompView(boundsDisplayObject);
+        }
 
         public void OnRenderObject()
         {
@@ -318,63 +318,63 @@ namespace DebugStuff
                 DrawLabels(currentDisplayedObject);
         }
 
-		static TreeView.TreeItem CreateObjTreeItem (GameObject obj, int level)
-		{
-			return new TreeView.TreeItem (obj, go => (go as GameObject).name, go => (go as GameObject).transform.childCount != 0, level);
-		}
+        static TreeView.TreeItem CreateObjTreeItem (GameObject obj, int level)
+        {
+            return new TreeView.TreeItem (obj, go => (go as GameObject).name, go => (go as GameObject).transform.childCount != 0, level);
+        }
 
-		void CollectObjects(GameObject obj, int level)
-		{
-			bool open = obj != hoverObject && hoverObject && hoverObject.transform.IsChildOf(obj.transform);
+        void CollectObjects(GameObject obj, int level)
+        {
+            bool open = obj != hoverObject && hoverObject && hoverObject.transform.IsChildOf(obj.transform);
 
-			var item = CreateObjTreeItem(obj, level);
-			item.IsOpen = open;
-			objTreeItems.Add (item);
+            var item = CreateObjTreeItem(obj, level);
+            item.IsOpen = open;
+            objTreeItems.Add (item);
 
-			if (open) {
-				for (int i = 0; i < obj.transform.childCount; i++) {
-					var child = obj.transform.GetChild(i).gameObject;
-					CollectObjects (child, level + 1);
-				}
-			}
-		}
+            if (open) {
+                for (int i = 0; i < obj.transform.childCount; i++) {
+                    var child = obj.transform.GetChild(i).gameObject;
+                    CollectObjects (child, level + 1);
+                }
+            }
+        }
 
-		private void RebuildHierarchy(GameObject p)
-		{
-			objTreeItems.Clear();
-			CollectObjects (p, 0);
-			objTreeView.Items(objTreeItems);
-		}
+        private void RebuildHierarchy(GameObject p)
+        {
+            objTreeItems.Clear();
+            CollectObjects (p, 0);
+            objTreeView.Items(objTreeItems);
+        }
 
-		private void CollectSceneObjects (Scene scene)
-		{
-			scene.GetRootGameObjects(rootObjects);
-			for (int i = 0; i < rootObjects.Count; i++) {
-				CollectObjects (rootObjects[i], 0);
-			}
-		}
+        private void CollectSceneObjects (Scene scene)
+        {
+            scene.GetRootGameObjects(rootObjects);
+            for (int i = 0; i < rootObjects.Count; i++) {
+                CollectObjects (rootObjects[i], 0);
+            }
+        }
 
-		private void RebuildRootObjects ()
-		{
-			Debug.Log ($"[DebugStuff] RebuildRootObjects {DontDestroyOnLoadScene.name}");
-			objTreeItems.Clear();
-			CollectSceneObjects (SceneManager.GetActiveScene());
-			objTreeView.Items(objTreeItems);
-			CollectSceneObjects (DontDestroyOnLoadScene);
-			objTreeView.Items(objTreeItems);
-		}
+        private void RebuildRootObjects ()
+        {
+            Debug.Log ($"[DebugStuff] RebuildRootObjects {DontDestroyOnLoadScene.name}");
+            objTreeItems.Clear();
+            CollectSceneObjects (SceneManager.GetActiveScene());
+            objTreeView.Items(objTreeItems);
+            CollectSceneObjects (DontDestroyOnLoadScene);
+            objTreeView.Items(objTreeItems);
+        }
 
-		private void RebuildCompView(GameObject obj)
-		{
-			compTreeItems.Clear();
-			var components = obj.GetComponents<Component>();
-			for (int i = 0; i < components.Length; i++) {
-				var comp = new ComponentWrapper(components[i]);
-				var item = new TreeView.TreeItem (comp, c => (c as ComponentWrapper).Name, c => (c as ComponentWrapper).Count > 0, 0);
-				compTreeItems.Add(item);
-			}
-			compTreeView.Items(compTreeItems);
-		}
+        private void RebuildCompView(GameObject obj)
+        {
+            compTreeItems.Clear();
+            var components = obj.GetComponents<Component>();
+            for (int i = 0; i < components.Length; i++) {
+                var comp = new ComponentWrapper(components[i]);
+                var item = new TreeView.TreeItem (comp, c => (c as ComponentWrapper).Name, c => (c as ComponentWrapper).Count > 0, 0);
+                compTreeItems.Add(item);
+            }
+            compTreeView.Items(compTreeItems);
+        }
 
         private void DumpPartHierarchy(GameObject p)
         {
@@ -682,9 +682,9 @@ namespace DebugStuff
 
         private void DrawObjects(GameObject go)
         {
-			if (go.scene == DontDestroyOnLoadScene) {
-				return;
-			}
+            if (go.scene == DontDestroyOnLoadScene) {
+                return;
+            }
             Profiler.BeginSample("DrawColliders");
 
             if (transforms)
@@ -826,191 +826,191 @@ namespace DebugStuff
             Profiler.EndSample();
         }
 
-		private void UpdateLimit(int dir)
-		{
-			limitDepth = Math.Max(0, limitDepth + dir);
-			limitText.Text(limitDepth.ToString());
-			currentDisplayedObject = GetRootObject(hoverObject);
-			boundsDisplayObject = currentDisplayedObject;
-		}
+        private void UpdateLimit(int dir)
+        {
+            limitDepth = Math.Max(0, limitDepth + dir);
+            limitText.Text(limitDepth.ToString());
+            currentDisplayedObject = GetRootObject(hoverObject);
+            boundsDisplayObject = currentDisplayedObject;
+        }
 
-		private void UpdateSceneLObjectsButton(bool on)
-		{
-			if (on) {
-				mode = Mode.SCENE;
-			}
-			sceneObjectsButton.interactable = on;
-		}
+        private void UpdateSceneLObjectsButton(bool on)
+        {
+            if (on) {
+                mode = Mode.SCENE;
+            }
+            sceneObjectsButton.interactable = on;
+        }
 
-		private void DebugCanvasFixerUpper()
-		{
-			var debug = GameObject.FindObjectOfType<DebugScreen>();
-			if (debug) {
-				print("Found DebugScreen");
-				CanvasScaler canvascaler = debug.GetComponentInParent<CanvasScaler>();
-				if (canvascaler) {
-					print("Found CanvasScaler");
-					Canvas canva = debug.GetComponentInParent<Canvas>();
-					if (canva) {
-						print("Found Canvas");
-
-
-						print(canva.referencePixelsPerUnit + " " + canva.pixelPerfect + " " + canva.name);
-						print(canvascaler.referencePixelsPerUnit + " " + canvascaler.dynamicPixelsPerUnit);
+        private void DebugCanvasFixerUpper()
+        {
+            var debug = GameObject.FindObjectOfType<DebugScreen>();
+            if (debug) {
+                print("Found DebugScreen");
+                CanvasScaler canvascaler = debug.GetComponentInParent<CanvasScaler>();
+                if (canvascaler) {
+                    print("Found CanvasScaler");
+                    Canvas canva = debug.GetComponentInParent<Canvas>();
+                    if (canva) {
+                        print("Found Canvas");
 
 
-						canvascaler.dynamicPixelsPerUnit = canvascaler.referencePixelsPerUnit;
-					}
-				}
-			}
-		}
+                        print(canva.referencePixelsPerUnit + " " + canva.pixelPerfect + " " + canva.name);
+                        print(canvascaler.referencePixelsPerUnit + " " + canvascaler.dynamicPixelsPerUnit);
+
+
+                        canvascaler.dynamicPixelsPerUnit = canvascaler.referencePixelsPerUnit;
+                    }
+                }
+            }
+        }
 
         private RectTransform UICreateWindow(GameObject parent)
         {
-			var mainWindow = UIKit.CreateUI<Window> (parent.transform as RectTransform, "Window");
-			mainWindow.SetSkin("DebugStuff");
-			ToggleGroup modeGroup;
-			mainWindow
-				.Title("Debug Stuff")
-				.Vertical()
-				.Padding(5, 5, 5, 2)
-				.ControlChildSize(true, true)
-				.ChildForceExpand(false,false)
-				.PreferredSizeFitter(true, true)
-				.Anchor(AnchorPresets.TopLeft)
-				.Pivot(PivotPresets.TopLeft)
-				.PreferredWidth(695)
+            var mainWindow = UIKit.CreateUI<Window> (parent.transform as RectTransform, "Window");
+            mainWindow.SetSkin("DebugStuff");
+            ToggleGroup modeGroup;
+            mainWindow
+                .Title("Debug Stuff")
+                .Vertical()
+                .Padding(5, 5, 5, 2)
+                .ControlChildSize(true, true)
+                .ChildForceExpand(false,false)
+                .PreferredSizeFitter(true, true)
+                .Anchor(AnchorPresets.TopLeft)
+                .Pivot(PivotPresets.TopLeft)
+                .PreferredWidth(695)
 
-				.Add<UIText>()
-					.Text("Move the cursor over while holding shift to select an object")
-					.FlexibleLayout(true, false)
-					.Finish()
+                .Add<UIText>()
+                    .Text("Move the cursor over while holding shift to select an object")
+                    .FlexibleLayout(true, false)
+                    .Finish()
 
-				.Add<Layout>()
-					.Horizontal()
-					.ControlChildSize(true, true)
-					.ChildForceExpand(false,false)
-					.Add<Layout>()
-						.Horizontal()
-						.ControlChildSize(true, true)
-						.ChildForceExpand(false,false)
-						.Padding(5, 5, 2, 4)
-						.Add<UIButton>()
-							.Text("Dump to log")
-							.OnClick(() => { print(sb.ToString()); })
-							.Finish()
-						.Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
-							.Add<UIToggle>().SetIsOnWithoutNotify(activeOnly).OnValueChanged((val) => { activeOnly = val; }).Finish()
-							.Add<UIText>().Text("Active Only").Finish()
-							.Finish()
-						.Finish()
-					.Add<UIEmpty>().FlexibleLayout(true, true).Finish()
-					.Add<LayoutPanel>("ModePanel")
-						.Horizontal()
-						.ControlChildSize(true, true)
-						.ChildForceExpand(false,false)
-						.Padding(5, 5, 2, 4)
-						.ToggleGroup(out modeGroup)
-						.Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
-							.Add<UIToggle>().SetIsOnWithoutNotify(mode == Mode.PART).Group(modeGroup).OnValueChanged((b) => { if (b) { mode = Mode.PART; } }).Finish()
-							.Add<UIText>().Text("Part").Finish()
-							.Finish()
-						.Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
-							.Add<UIToggle>().SetIsOnWithoutNotify(mode == Mode.UI).Group(modeGroup).OnValueChanged((b) => { if (b) { mode = Mode.UI; } }).Finish()
-							.Add<UIText>().Text("UI").Finish()
-							.Finish()
-						.Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
-							.Add<UIToggle>().SetIsOnWithoutNotify(mode == Mode.OBJECT).Group(modeGroup).OnValueChanged((b) => { if (b) { mode = Mode.OBJECT; } }).Finish()
-							.Add<UIText>().Text("Object").Finish()
-							.Finish()
-						.Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
-							.Add<UIToggle>().SetIsOnWithoutNotify(mode == Mode.SCENE).Group(modeGroup).OnValueChanged((b) => { UpdateSceneLObjectsButton (b); }).Finish()
-							.Add<UIButton>(out sceneObjectsButton).Text("Scene").OnClick(RebuildRootObjects).Finish()
-							.Finish()
-						.Finish()
-					.Add<UIEmpty>().FlexibleLayout(true, true).Finish()
-					.Add<Layout>()
-						.Horizontal()
-						.ControlChildSize(true, true)
-						.ChildForceExpand(false,false)
-						.Padding(5, 5, 2, 4)
-						.Add<UIButton>()
-							.Text("-")
-							.OnClick(() => { UpdateLimit(-1); })
-							.MinSize(30, -1)
-							.Finish()
-						.Add<UIText>(out limitText)
-							.Text(limitDepth.ToString())
-							.Alignment(TextAlignmentOptions .Center)
-							.Size(20)
-							.MinSize(30, -1)
-							.Finish()
-						.Add<UIButton>()
-							.Text("+")
-							.OnClick(() => { UpdateLimit(1); })
-							.MinSize(30, -1)
-							.Finish()
-						.Add<UIButton>()
-							.Text("*").OnClick(DebugCanvasFixerUpper)
-							.MinSize(30, -1)
-							.Finish()
-						.Finish()
-					.Finish()
+                .Add<Layout>()
+                    .Horizontal()
+                    .ControlChildSize(true, true)
+                    .ChildForceExpand(false,false)
+                    .Add<Layout>()
+                        .Horizontal()
+                        .ControlChildSize(true, true)
+                        .ChildForceExpand(false,false)
+                        .Padding(5, 5, 2, 4)
+                        .Add<UIButton>()
+                            .Text("Dump to log")
+                            .OnClick(() => { print(sb.ToString()); })
+                            .Finish()
+                        .Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
+                            .Add<UIToggle>().SetIsOnWithoutNotify(activeOnly).OnValueChanged((val) => { activeOnly = val; }).Finish()
+                            .Add<UIText>().Text("Active Only").Finish()
+                            .Finish()
+                        .Finish()
+                    .Add<UIEmpty>().FlexibleLayout(true, true).Finish()
+                    .Add<LayoutPanel>("ModePanel")
+                        .Horizontal()
+                        .ControlChildSize(true, true)
+                        .ChildForceExpand(false,false)
+                        .Padding(5, 5, 2, 4)
+                        .ToggleGroup(out modeGroup)
+                        .Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
+                            .Add<UIToggle>().SetIsOnWithoutNotify(mode == Mode.PART).Group(modeGroup).OnValueChanged((b) => { if (b) { mode = Mode.PART; } }).Finish()
+                            .Add<UIText>().Text("Part").Finish()
+                            .Finish()
+                        .Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
+                            .Add<UIToggle>().SetIsOnWithoutNotify(mode == Mode.UI).Group(modeGroup).OnValueChanged((b) => { if (b) { mode = Mode.UI; } }).Finish()
+                            .Add<UIText>().Text("UI").Finish()
+                            .Finish()
+                        .Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
+                            .Add<UIToggle>().SetIsOnWithoutNotify(mode == Mode.OBJECT).Group(modeGroup).OnValueChanged((b) => { if (b) { mode = Mode.OBJECT; } }).Finish()
+                            .Add<UIText>().Text("Object").Finish()
+                            .Finish()
+                        .Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
+                            .Add<UIToggle>().SetIsOnWithoutNotify(mode == Mode.SCENE).Group(modeGroup).OnValueChanged((b) => { UpdateSceneLObjectsButton (b); }).Finish()
+                            .Add<UIButton>(out sceneObjectsButton).Text("Scene").OnClick(RebuildRootObjects).Finish()
+                            .Finish()
+                        .Finish()
+                    .Add<UIEmpty>().FlexibleLayout(true, true).Finish()
+                    .Add<Layout>()
+                        .Horizontal()
+                        .ControlChildSize(true, true)
+                        .ChildForceExpand(false,false)
+                        .Padding(5, 5, 2, 4)
+                        .Add<UIButton>()
+                            .Text("-")
+                            .OnClick(() => { UpdateLimit(-1); })
+                            .MinSize(30, -1)
+                            .Finish()
+                        .Add<UIText>(out limitText)
+                            .Text(limitDepth.ToString())
+                            .Alignment(TextAlignmentOptions .Center)
+                            .Size(20)
+                            .MinSize(30, -1)
+                            .Finish()
+                        .Add<UIButton>()
+                            .Text("+")
+                            .OnClick(() => { UpdateLimit(1); })
+                            .MinSize(30, -1)
+                            .Finish()
+                        .Add<UIButton>()
+                            .Text("*").OnClick(DebugCanvasFixerUpper)
+                            .MinSize(30, -1)
+                            .Finish()
+                        .Finish()
+                    .Finish()
 
-				.Add<Layout>()
-					.Horizontal()
-					.ControlChildSize(true, true)
-					.ChildForceExpand(false,false)
-					.Padding(5, 5, 2, 4)
+                .Add<Layout>()
+                    .Horizontal()
+                    .ControlChildSize(true, true)
+                    .ChildForceExpand(false,false)
+                    .Padding(5, 5, 2, 4)
 
-					.Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
-						.Add<UIToggle>().SetIsOnWithoutNotify(labels).OnValueChanged((val) => labels = val).Finish()
-						.Add<UIText>().Text("Labels").Finish()
-						.Finish()
-					.Add<Layout>().Horizontal().ControlChildSize(true, true) .ChildForceExpand(true, true)
-						.Add<UIToggle>().SetIsOnWithoutNotify(transforms).OnValueChanged((val) => transforms = val).Finish()
-						.Add<UIText>().Text("Transforms").Finish()
-						.Finish()
-					.Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
-						.Add<UIToggle>().SetIsOnWithoutNotify(colliders).OnValueChanged((val) => colliders = val).Finish()
-						.Add<UIText>().Text("Colliders").Finish()
-						.Finish()
-					.Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
-						.Add<UIToggle>().SetIsOnWithoutNotify(meshes).OnValueChanged((val) => meshes = val).Finish()
-						.Add<UIText>().Text("Meshes").Finish()
-						.Finish()
-					.Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
-						.Add<UIToggle>().SetIsOnWithoutNotify(bounds).OnValueChanged((val) => bounds = val).Finish()
-						.Add<UIText>().Text("Bounds").Finish()
-						.Finish()
-					.Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
-						.Add<UIToggle>().SetIsOnWithoutNotify(joints).OnValueChanged((val) => joints = val).Finish()
-						.Add<UIText>().Text("Joints").Finish()
-						.Finish()
-					.Finish()
-				.Add<UIText>(out info)
-					/*.Font(monoSpaceFont)*/
-					.Size(12)
-					.FlexibleLayout(true, false)
-					.Finish()
-				.Add<TreeView>(out objTreeView)
-					.Items(objTreeItems)
-					.OnClick(OnObjTreeClicked)
-					.OnStateChanged(OnObjTreeStateChanged)
-					.PreferredSize(-1,250)
-					.FlexibleLayout(true, true)
-					.Finish()
-				.Add<UIEmpty>().PreferredSize(-1, 30).Finish()
-				.Add<TreeView>(out compTreeView)
-					.Items(objTreeItems)
-					//.OnClick(OnCompTreeClicked)
-					.OnStateChanged(OnCompTreeStateChanged)
-					.PreferredSize(-1,150)
-					.FlexibleLayout(true, true)
-					.Finish()
-				.Finish();
+                    .Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
+                        .Add<UIToggle>().SetIsOnWithoutNotify(labels).OnValueChanged((val) => labels = val).Finish()
+                        .Add<UIText>().Text("Labels").Finish()
+                        .Finish()
+                    .Add<Layout>().Horizontal().ControlChildSize(true, true) .ChildForceExpand(true, true)
+                        .Add<UIToggle>().SetIsOnWithoutNotify(transforms).OnValueChanged((val) => transforms = val).Finish()
+                        .Add<UIText>().Text("Transforms").Finish()
+                        .Finish()
+                    .Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
+                        .Add<UIToggle>().SetIsOnWithoutNotify(colliders).OnValueChanged((val) => colliders = val).Finish()
+                        .Add<UIText>().Text("Colliders").Finish()
+                        .Finish()
+                    .Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
+                        .Add<UIToggle>().SetIsOnWithoutNotify(meshes).OnValueChanged((val) => meshes = val).Finish()
+                        .Add<UIText>().Text("Meshes").Finish()
+                        .Finish()
+                    .Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
+                        .Add<UIToggle>().SetIsOnWithoutNotify(bounds).OnValueChanged((val) => bounds = val).Finish()
+                        .Add<UIText>().Text("Bounds").Finish()
+                        .Finish()
+                    .Add<Layout>().Horizontal().ControlChildSize(true, true).ChildForceExpand(true, true)
+                        .Add<UIToggle>().SetIsOnWithoutNotify(joints).OnValueChanged((val) => joints = val).Finish()
+                        .Add<UIText>().Text("Joints").Finish()
+                        .Finish()
+                    .Finish()
+                .Add<UIText>(out info)
+                    /*.Font(monoSpaceFont)*/
+                    .Size(12)
+                    .FlexibleLayout(true, false)
+                    .Finish()
+                .Add<TreeView>(out objTreeView)
+                    .Items(objTreeItems)
+                    .OnClick(OnObjTreeClicked)
+                    .OnStateChanged(OnObjTreeStateChanged)
+                    .PreferredSize(-1,250)
+                    .FlexibleLayout(true, true)
+                    .Finish()
+                .Add<UIEmpty>().PreferredSize(-1, 30).Finish()
+                .Add<TreeView>(out compTreeView)
+                    .Items(objTreeItems)
+                    //.OnClick(OnCompTreeClicked)
+                    .OnStateChanged(OnCompTreeStateChanged)
+                    .PreferredSize(-1,150)
+                    .FlexibleLayout(true, true)
+                    .Finish()
+                .Finish();
 
-			sceneObjectsButton.interactable = mode == Mode.SCENE;
+            sceneObjectsButton.interactable = mode == Mode.SCENE;
             return mainWindow.rectTransform;
 
             //addButton(buttonPanel.gameObject, "List", (b) =>
