@@ -22,6 +22,7 @@ namespace DebugStuff
     {
         private int flip;
         
+		private Scene DontDestroyOnLoadScene;
         private GameObject hoverObject;
         private GameObject previousDisplayedObject;
         private GameObject currentDisplayedObject;
@@ -136,6 +137,7 @@ namespace DebugStuff
         public void Awake()
         {
             DontDestroyOnLoad(this);
+			DontDestroyOnLoadScene = gameObject.scene;
         }
 
         public void Update()
@@ -344,13 +346,21 @@ namespace DebugStuff
 			objTreeView.Items(objTreeItems);
 		}
 
-		private void RebuildRootObjects ()
+		private void CollectSceneObjects (Scene scene)
 		{
-			SceneManager.GetActiveScene().GetRootGameObjects(rootObjects);
-			objTreeItems.Clear();
+			scene.GetRootGameObjects(rootObjects);
 			for (int i = 0; i < rootObjects.Count; i++) {
 				CollectObjects (rootObjects[i], 0);
 			}
+		}
+
+		private void RebuildRootObjects ()
+		{
+			Debug.Log ($"[DebugStuff] RebuildRootObjects {DontDestroyOnLoadScene.name}");
+			objTreeItems.Clear();
+			CollectSceneObjects (SceneManager.GetActiveScene());
+			objTreeView.Items(objTreeItems);
+			CollectSceneObjects (DontDestroyOnLoadScene);
 			objTreeView.Items(objTreeItems);
 		}
 
@@ -672,6 +682,9 @@ namespace DebugStuff
 
         private void DrawObjects(GameObject go)
         {
+			if (go.scene == DontDestroyOnLoadScene) {
+				return;
+			}
             Profiler.BeginSample("DrawColliders");
 
             if (transforms)
