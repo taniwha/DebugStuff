@@ -682,9 +682,6 @@ namespace DebugStuff
 
         private void DrawObjects(GameObject go)
         {
-            if (go.scene == DontDestroyOnLoadScene) {
-                return;
-            }
             Profiler.BeginSample("DrawColliders");
 
             if (transforms)
