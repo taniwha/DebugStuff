@@ -220,6 +220,11 @@ namespace DebugStuff
                 {
                     previousDisplayedObject = currentDisplayedObject;
                     RebuildHierarchy(currentDisplayedObject);
+					for (int i = 0; i < objTreeItems.Count; i++) {
+						if (objTreeItems[i].Object as GameObject == hoverObject) {
+							objTreeView.SelectItem (i);
+						}
+					}
                 }
             }
         }
@@ -268,6 +273,7 @@ namespace DebugStuff
         void OnObjTreeClicked(int index)
         {
             boundsDisplayObject = objTreeItems[index].Object as GameObject;
+			objTreeView.SelectItem (index);
             RebuildCompView(boundsDisplayObject);
         }
 
@@ -356,10 +362,14 @@ namespace DebugStuff
 
         private void RebuildRootObjects ()
         {
-            Debug.Log ($"[DebugStuff] RebuildRootObjects {DontDestroyOnLoadScene.name}");
+            Debug.Log ($"[DebugStuff] RebuildRootObjects {DontDestroyOnLoadScene.name} {SceneManager.sceneCount}");
             objTreeItems.Clear();
-            CollectSceneObjects (SceneManager.GetActiveScene());
-            objTreeView.Items(objTreeItems);
+			for (int i = 0; i < SceneManager.sceneCount; i++) {
+				Debug.Log ($"    {SceneManager.GetSceneAt (i).name}");
+				CollectSceneObjects (SceneManager.GetSceneAt (i));
+			}
+			//CollectSceneObjects (SceneManager.GetActiveScene());
+			//objTreeView.Items(objTreeItems);
             CollectSceneObjects (DontDestroyOnLoadScene);
             objTreeView.Items(objTreeItems);
         }
@@ -876,7 +886,7 @@ namespace DebugStuff
                 .PreferredSizeFitter(true, true)
                 .Anchor(AnchorPresets.TopLeft)
                 .Pivot(PivotPresets.TopLeft)
-                .PreferredWidth(695)
+                .PreferredWidth(800)
 
                 .Add<UIText>()
                     .Text("Move the cursor over while holding shift to select an object")
@@ -999,7 +1009,7 @@ namespace DebugStuff
                     .Finish()
                 .Add<UIEmpty>().PreferredSize(-1, 30).Finish()
                 .Add<TreeView>(out compTreeView)
-                    .Items(objTreeItems)
+                    .Items(compTreeItems)
                     //.OnClick(OnCompTreeClicked)
                     .OnStateChanged(OnCompTreeStateChanged)
                     .PreferredSize(-1,150)
