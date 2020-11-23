@@ -7,6 +7,19 @@ export PLUGINDIR	:= ${MODGAMEDATA}/Plugins
 
 TARGETS		:= bin/DebugStuff.dll
 
+IMAGE_PATH := Modules/KodeUI/KodeUI-Unity/GameData/KodeUI/UI
+
+IMAGES := \
+	${IMAGE_PATH}/background.png	\
+	${IMAGE_PATH}/button.png	\
+	${IMAGE_PATH}/button_on.png	\
+	${IMAGE_PATH}/dropdown.png	\
+	${IMAGE_PATH}/toggle.png	\
+	${IMAGE_PATH}/toggle_off.png	\
+	${IMAGE_PATH}/toggle_on.png	\
+	${IMAGE_PATH}/window.png	\
+	$e
+
 DS_FILES := \
 	DebugDrawer.cs \
 	DebugStuff.cs \
@@ -73,5 +86,7 @@ clean:
 install: all
 	mkdir -p ${PLUGINDIR}
 	cp ${TARGETS} ${PLUGINDIR}
+	mkdir -p ${MODGAMEDATA}/UI
+	cp ${IMAGES} DefaultSkin.cfg ${MODGAMEDATA}/UI
 
 .PHONY: all clean install
