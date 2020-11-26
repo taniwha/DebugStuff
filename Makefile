@@ -24,6 +24,7 @@ DS_FILES := \
 	DebugDrawer.cs \
 	DebugStuff.cs \
 	DrawTools.cs \
+	SpriteViewer.cs \
 	Properties/AssemblyInfo.cs \
 	$e
 

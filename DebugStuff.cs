@@ -20,6 +20,7 @@ namespace DebugStuff
     [KSPAddon(KSPAddon.Startup.EveryScene, true)]
     internal class DebugStuff : MonoBehaviour
     {
+		public static DebugStuff instance;
         private int flip;
         
         private Scene DontDestroyOnLoadScene;
@@ -48,7 +49,7 @@ namespace DebugStuff
             public class MemberItemList : List<TreeView.TreeItem> {}
             const BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 
-            Component component;
+            public Component component {get; private set; }
             string name;
             MemberInfo []members;
             int memberCount; // of displaying members
@@ -111,6 +112,24 @@ namespace DebugStuff
                 }
                 return list;
             }
+
+			void DisplayObject(object obj)
+			{
+				if (obj is Sprite) {
+					var sprite = obj as Sprite;
+					SpriteViewer.ShowSprite(sprite);
+				}
+			}
+
+			public void DisplayObject(FieldInfo fi)
+			{
+				DisplayObject(fi.GetValue(component));
+			}
+
+			public void DisplayObject(PropertyInfo pi)
+			{
+				DisplayObject(pi.GetValue(component));
+			}
         }
 
         private static RectTransform window;
@@ -136,6 +155,7 @@ namespace DebugStuff
 
         public void Awake()
         {
+			instance = this;
             DontDestroyOnLoad(this);
             DontDestroyOnLoadScene = gameObject.scene;
         }
@@ -276,6 +296,28 @@ namespace DebugStuff
 			objTreeView.SelectItem (index);
             RebuildCompView(boundsDisplayObject);
         }
+
+		ComponentWrapper FindComponent(int index)
+		{
+			while (index >= 0) {
+				object item = compTreeItems[index--].Object;
+				if (item is ComponentWrapper cw) {
+					return cw;
+				}
+			}
+			return null;
+		}
+
+		void OnCompTreeClicked(int index)
+		{
+			var item = compTreeItems[index];
+			var component = FindComponent(index);
+			if (item.Object is FieldInfo field) {
+				component.DisplayObject (field);
+			} else if (item.Object is PropertyInfo property) {
+				component.DisplayObject (property);
+			}
+		}
 
         public void OnRenderObject()
         {
@@ -1010,7 +1052,7 @@ namespace DebugStuff
                 .Add<UIEmpty>().PreferredSize(-1, 30).Finish()
                 .Add<TreeView>(out compTreeView)
                     .Items(compTreeItems)
-                    //.OnClick(OnCompTreeClicked)
+                    .OnClick(OnCompTreeClicked)
                     .OnStateChanged(OnCompTreeStateChanged)
                     .PreferredSize(-1,150)
                     .FlexibleLayout(true, true)
