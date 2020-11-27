@@ -621,7 +621,15 @@ namespace DebugStuff
 
             if (mode == Mode.OBJECT)
             {
-                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                Camera camera = Camera.main;
+                if (MapView.MapIsEnabled) {
+                    camera = PlanetariumCamera.Camera;
+                }
+                if (camera == null) {
+                    Debug.Log ("no camera to find object under mouse");
+                    return null;
+                }
+                Ray ray = camera.ScreenPointToRay(Input.mousePosition);
                 //int layerMask = ~LayerMask.NameToLayer("UI");
                 int layerMask = ~0;
 

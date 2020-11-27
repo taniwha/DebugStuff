@@ -58,6 +58,8 @@ public static class DrawTools
             cam = MapView.MapIsEnabled ? PlanetariumCamera.Camera : FlightCamera.fetch.mainCamera;
         else
             cam = Camera.main;
+		if (cam == null && HighLogic.LoadedSceneHasPlanetarium)
+			cam = PlanetariumCamera.Camera;
         return cam;
     }
 
